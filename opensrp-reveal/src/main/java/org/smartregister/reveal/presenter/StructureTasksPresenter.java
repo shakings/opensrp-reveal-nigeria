@@ -1,6 +1,8 @@
 package org.smartregister.reveal.presenter;
 
 import android.content.Context;
+import android.content.Intent;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
@@ -8,6 +10,7 @@ import com.mapbox.geojson.Feature;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.smartregister.commonregistry.CommonPersonObjectClient;
 import org.smartregister.domain.Task;
@@ -27,9 +30,13 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Set;
 
+import timber.log.Timber;
+
 import static org.smartregister.reveal.contract.StructureTasksContract.Interactor;
 import static org.smartregister.reveal.contract.StructureTasksContract.Presenter;
+import static org.smartregister.reveal.util.Constants.Intervention.BEDNET_DISTRIBUTION;
 import static org.smartregister.reveal.util.Constants.Intervention.BLOOD_SCREENING;
+import static org.smartregister.reveal.util.Constants.Intervention.MDA_DRUG_RECON;
 
 /**
  * Created by samuelgithengi on 4/12/19.
@@ -94,7 +101,7 @@ public class StructureTasksPresenter extends BaseFormFragmentPresenter implement
                     details.setEdit(true);
                     getView().showProgressDialog(R.string.opening_form_title, R.string.opening_form_message);
                     interactor.getStructure(details);
-                } else if(isUndo) {
+                } else if (isUndo) {
                     getView().displayResetTaskInfoDialog(details);
                 } else {
                     getView().displayToast("Task Completed");
@@ -110,8 +117,10 @@ public class StructureTasksPresenter extends BaseFormFragmentPresenter implement
     @Override
     public void onLocationValidated() {
         StructureTaskDetails taskDetails = (StructureTaskDetails) getTaskDetails();
-        if (taskDetails.isEdit() && (Constants.Intervention.BEDNET_DISTRIBUTION.equals(taskDetails.getTaskCode()) || BLOOD_SCREENING.equals(taskDetails.getTaskCode()))) {
+        if (taskDetails.isEdit() && (BEDNET_DISTRIBUTION.equals(taskDetails.getTaskCode()) || BLOOD_SCREENING.equals(taskDetails.getTaskCode()))) {
             interactor.findLastEvent(taskDetails);
+        } else if (MDA_DRUG_RECON.equals(taskDetails.getTaskCode())) {
+            interactor.findCompletedDispenseTasks(taskDetails);
         } else {
             super.onLocationValidated();
         }
@@ -147,15 +156,26 @@ public class StructureTasksPresenter extends BaseFormFragmentPresenter implement
 
     @Override
     public void onEventFound(Event event) {
+        onEventFound(event, 0);
+    }
 
+    public void onEventFound(Event event, int numberOfMembers) {
         String formName = getView().getJsonFormUtils().getFormName(null, getTaskDetails().getTaskCode());
         if (StringUtils.isBlank(formName)) {
             getView().displayError(R.string.opening_form_title, R.string.form_not_found);
         } else {
             JSONObject formJSON = getView().getJsonFormUtils().getFormJSON(getView().getContext(), formName, getTaskDetails(), getStructure());
             getView().getJsonFormUtils().populateForm(event, formJSON);
-            if (Constants.Intervention.BEDNET_DISTRIBUTION.equals(getTaskDetails().getTaskCode())) {
+            if (BEDNET_DISTRIBUTION.equals(getTaskDetails().getTaskCode())) {
                 formInteractor.findNumberOfMembers(getTaskDetails().getTaskEntity(), formJSON);
+            } else if (MDA_DRUG_RECON.equals(getTaskDetails().getTaskCode())) {
+                try {
+                    String jsonStr = formJSON.toString().replace(Constants.JsonForm.NUMBER_OF_FAMILY_MEMBERS, numberOfMembers + "");
+                    getView().startForm(new JSONObject(jsonStr));
+                } catch (JSONException e) {
+                    Timber.e(e, "Error updating Number of members");
+                    getView().startForm(formJSON);
+                }
             } else {
                 getView().startForm(formJSON);
             }
@@ -172,6 +192,11 @@ public class StructureTasksPresenter extends BaseFormFragmentPresenter implement
     @Override
     public void onTaskInfoReset(String structureId) {
         findTasks(structureId);
+    }
+
+    @Override
+    public void onFetchedMembersCount(int finalNumberOfMembers) {
+        onEventFound(null, finalNumberOfMembers);
     }
 
     @Override
