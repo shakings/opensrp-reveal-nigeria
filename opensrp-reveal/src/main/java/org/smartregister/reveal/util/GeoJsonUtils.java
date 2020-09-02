@@ -18,6 +18,7 @@ import static org.smartregister.reveal.util.Constants.BusinessStatus.DRUG_RECON_
 import static org.smartregister.reveal.util.Constants.BusinessStatus.BEDNET_DISTRIBUTED;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.BLOOD_SCREENING_COMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.COMPLETE;
+import static org.smartregister.reveal.util.Constants.BusinessStatus.FAMILY_NO_TASK_REGISTERED;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.FAMILY_REGISTERED;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.INCOMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.NOT_DISPENSED;
@@ -200,7 +201,9 @@ public class GeoJsonUtils {
                 state.partiallyReceived = (!state.fullyReceived && (mdaStatusMap.get(SMC_COMPLETE) > 0));
 
                 if (familyRegTaskMissingOrFamilyRegComplete) {
-                    if (state.mdaAdhered) {
+                    if (mdaStatusMap.get(MDA_DISPENSE_TASK_COUNT) == 0) {
+                        taskProperties.put(TASK_BUSINESS_STATUS, FAMILY_NO_TASK_REGISTERED);
+                    } else if (state.mdaAdhered) {
                         taskProperties.put(TASK_BUSINESS_STATUS, DRUG_RECON_COMPLETE);
                     } else if (state.fullyReceived) {
                         taskProperties.put(TASK_BUSINESS_STATUS, SMC_COMPLETE);
