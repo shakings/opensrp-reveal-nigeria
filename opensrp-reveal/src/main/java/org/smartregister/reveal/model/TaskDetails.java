@@ -1,10 +1,12 @@
 package org.smartregister.reveal.model;
 
 import android.location.Location;
+
 import androidx.annotation.NonNull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.smartregister.reveal.util.Utils;
+import org.smartregister.reveal.viewholder.TaskRegisterViewHolder;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -14,10 +16,10 @@ import static org.smartregister.reveal.util.Constants.BusinessStatus.BEDNET_DIST
 import static org.smartregister.reveal.util.Constants.BusinessStatus.BLOOD_SCREENING_COMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.COMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.FAMILY_REGISTERED;
-import static org.smartregister.reveal.util.Constants.BusinessStatus.NOT_DISPENSED;
-import static org.smartregister.reveal.util.Constants.BusinessStatus.SMC_COMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.INELIGIBLE;
+import static org.smartregister.reveal.util.Constants.BusinessStatus.NOT_DISPENSED;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.NOT_VISITED;
+import static org.smartregister.reveal.util.Constants.BusinessStatus.SMC_COMPLETE;
 import static org.smartregister.reveal.util.Constants.BusinessStatus.TASKS_INCOMPLETE;
 import static org.smartregister.reveal.util.Constants.COMMA;
 import static org.smartregister.reveal.util.Constants.HYPHEN;
@@ -75,6 +77,8 @@ public class TaskDetails extends BaseTaskDetails implements Comparable<TaskDetai
     private boolean notEligible;
 
     private String aggregateBusinessStatus;
+
+    private int mdaTasksCount;
 
     public TaskDetails(@NonNull String taskId) {
         super(taskId);
@@ -299,13 +303,14 @@ public class TaskDetails extends BaseTaskDetails implements Comparable<TaskDetai
         setNoneReceived(mdaStatusMap.get(NOT_DISPENSED) == mdaStatusMap.get(MDA_DISPENSE_TASK_COUNT));
         setNotEligible(mdaStatusMap.get(INELIGIBLE) == mdaStatusMap.get(MDA_DISPENSE_TASK_COUNT));
         setPartiallyReceived(!isFullyReceived() && (mdaStatusMap.get(SMC_COMPLETE) > 0));
+        setMdaTasksCount(mdaStatusMap.get(MDA_DISPENSE_TASK_COUNT));
 
         setAggregateBusinessStatus(calculateAggregateBusinessStatus());
     }
 
     /**
      * @return the aggregate business status
-     * @see org.smartregister.reveal.viewholder.TaskRegisterViewHolder getActionDrawable(TaskDetails task)
+     * @see TaskRegisterViewHolder getActionDrawable(TaskDetails task)
      * Calculates the aggregate/overall business status
      */
     private String calculateAggregateBusinessStatus() {
@@ -369,5 +374,13 @@ public class TaskDetails extends BaseTaskDetails implements Comparable<TaskDetai
 
     public void setAggregateBusinessStatus(String aggregateBusinessStatus) {
         this.aggregateBusinessStatus = aggregateBusinessStatus;
+    }
+
+    public void setMdaTasksCount(int mdaTasksCount) {
+        this.mdaTasksCount = mdaTasksCount;
+    }
+
+    public int getMdaTasksCount() {
+        return mdaTasksCount;
     }
 }

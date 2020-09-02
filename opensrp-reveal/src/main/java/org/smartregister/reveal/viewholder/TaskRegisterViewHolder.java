@@ -2,13 +2,14 @@ package org.smartregister.reveal.viewholder;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import org.smartregister.reveal.R;
 import org.smartregister.reveal.model.CardDetails;
@@ -89,13 +90,16 @@ public class TaskRegisterViewHolder extends RecyclerView.ViewHolder {
     public void setTaskAction(String actionLabel, TaskDetails task, CardDetails cardDetails, View.OnClickListener onClickListener) {
         actionView.setText(actionLabel);
 
+        if ((task.isFamilyRegistered() || task.isFamilyRegTaskExists()) && task.getMdaTasksCount() == 0) {
+            actionView.setBackground(context.getResources().getDrawable(R.drawable.mda_no_tasks_family_registered_bg));
+        }
         // registered family with multiple tasks
-        if (cardDetails != null && task.getTaskCount() != null) { // task grouping only for FI
+        else if (cardDetails != null && task.getTaskCount() != null) { // task grouping only for FI
             if (task.getTaskCount() > 1) {
                 if (task.getTaskCount() != task.getCompleteTaskCount()) {
 
 
-                    Pair<Drawable, String > actionViewPair = getActionDrawable(task);
+                    Pair<Drawable, String> actionViewPair = getActionDrawable(task);
                     actionView.setTextColor(context.getResources().getColor(R.color.text_black));
                     actionView.setBackground(actionViewPair.first);
                     actionView.setText(actionViewPair.second);
@@ -137,6 +141,7 @@ public class TaskRegisterViewHolder extends RecyclerView.ViewHolder {
     public void showHouseNumber() {
         houseNumberView.setVisibility(View.VISIBLE);
     }
+
     public void hideHouseNumber() {
         houseNumberView.setVisibility(View.GONE);
     }
@@ -148,14 +153,14 @@ public class TaskRegisterViewHolder extends RecyclerView.ViewHolder {
     private void showTasksCompleteActionView() {
         if (Utils.isFocusInvestigation()) {
             actionView.setBackground(context.getResources().getDrawable(R.drawable.tasks_complete_bg));
-        } else if (Utils.isMDA()){
+        } else if (Utils.isMDA()) {
             actionView.setBackground(context.getResources().getDrawable(R.drawable.tasks_complete_bg));
         }
         actionView.setTextColor(context.getResources().getColor(R.color.text_black));
         actionView.setText(context.getText(R.string.tasks_complete));
     }
 
-    private Pair<Drawable, String > getActionDrawable(TaskDetails task) {
+    private Pair<Drawable, String> getActionDrawable(TaskDetails task) {
         // The assumption is that a register structure task always exists if the structure has
         // atleast one bednet distribution or blood screening task
         boolean familyRegTaskMissingOrFamilyRegComplete = task.isFamilyRegistered() || !task.isFamilyRegTaskExists();
